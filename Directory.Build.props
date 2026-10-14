@@ -1,0 +1,34 @@
+<Project>
+
+  <!--
+    Shared by both projects in this repo. One target framework, pinned to the
+    .NET the CURRENT Umbraco LTS runs on (verified 14-10-2026 against the
+    Umbraco.Cms NuGet package metadata and umbraco.com/blog/umbraco-17-lts-release):
+
+      Umbraco 17 LTS  — released 27-11-2025, EOL 27-11-2028 — targets net10.0
+      Umbraco 18 STS  — released 25-06-2026 (current latest major)  — targets net10.0
+
+    Umbraco 13 LTS (net8.0) is still supported but reaches end of life
+    14-12-2026 — a month after this was written — so it is not the version to
+    build a new package against. See README.md "Why Umbraco 17" for the full
+    comparison.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
+
+    <Authors>Ciphera</Authors>
+    <Company>Ciphera BV</Company>
+    <Copyright>Copyright $([System.DateTime]::Now.Year) Ciphera BV</Copyright>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ciphera-net/pulse-umbraco</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ciphera-net/pulse-umbraco</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
+</Project>

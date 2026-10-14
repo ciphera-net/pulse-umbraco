@@ -1,0 +1,16 @@
+bin/
+obj/
+*.user
+.vs/
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# dotnet publish / pack output
+artifacts/
+*.nupkg
+*.snupkg
+
+# the verify.sh harness builds a throwaway Umbraco site; never commit it
+.verify-work/

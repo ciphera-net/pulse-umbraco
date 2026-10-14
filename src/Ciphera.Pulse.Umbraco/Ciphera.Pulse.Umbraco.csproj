@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Ciphera.Pulse.Umbraco</PackageId>
+    <Title>Pulse Analytics for Umbraco</Title>
+    <Description>Privacy-first web analytics for Umbraco. A TagHelper you add to your layout, no cookies, no personal data, and the script it adds to your pages is under 3 KB.</Description>
+    <!--
+      Only the installable component is tagged "umbraco-marketplace" (there is
+      no separate Core/Web split here, so this one package carries it) — see
+      RELEASING.md "What the Marketplace tag covers".
+    -->
+    <PackageTags>umbraco-marketplace;umbraco;analytics;privacy;pulse</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      A plain class library target (not Sdk.Web) that still gets the
+      TagHelper base class, HttpContext, IHtmlContent etc. from the shared
+      framework rather than a NuGet package. This is the standard shape for a
+      Razor Class Library NuGet that ships TagHelpers to be consumed by a
+      *host* ASP.NET Core application (Umbraco) — the host brings its own
+      copy of Microsoft.AspNetCore.App at run time, so this package carries
+      no ASP.NET Core binaries of its own.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Version="17.0.0" is a MINIMUM, not a pin — NuGet resolves a plain
+      PackageReference version as "this or higher" for a library consumed by
+      a host app, so a site on Umbraco 17 or 18 both restore cleanly against
+      whichever version the site itself references. Only Umbraco.Cms.Core is
+      needed: IComposer/IUmbracoBuilder, GlobalSettings, IUmbracoContextAccessor
+      and IHostingEnvironment all live there, so this is also the ONE direct
+      Umbraco.Cms.* dependency the Marketplace reads to infer the supported
+      version range (see "Listing Your Package" — only the installable
+      component should carry a direct Umbraco.Cms.* reference).
+    -->
+    <PackageReference Include="Umbraco.Cms.Core" Version="17.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
