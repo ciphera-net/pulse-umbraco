@@ -113,18 +113,26 @@ right tag is the whole mechanism:
   per the lesson above, add a version-drift watcher comparing the nuget.org
   version to the latest git tag, since NOTHING else will notice if a future
   release fails to publish.
-- **No PackageIcon is set.** The Marketplace pulls the icon from NuGet
-  package metadata; without one the listing shows nuget.org's generic
-  default. Add a 128×128 PNG via `<PackageIcon>icon.png</PackageIcon>` plus
-  an `<None Include="icon.png" Pack="true" PackagePath="\" />` before the
-  real release — this needs a small design pass this task was not scoped to
-  do (Pulse mark alone; no platform logo — see "No Umbraco logo on the
-  listing" below).
+- **The package icon is set. Only the first push shows how nuget.org and the
+  Marketplace render it.** `src/Ciphera.Pulse.Umbraco/icon.png` is a 128×128
+  PNG (2,982 bytes, the Pulse mark on `#0a0a0a`), copied byte for byte from
+  the brand library's v6 Umbraco icon, SHA-256
+  `3d31c1262f8b17bbed0d3d481c08e4f6907dc8fed92ffdd743a6b17b9ae4c895`.
+  The csproj sets `<PackageIcon>icon.png</PackageIcon>` and packs the file
+  with `<None Include="icon.png" Pack="true" PackagePath="\" />`.
+  `dotnet pack` puts it at the root of the `.nupkg` with that same hash and
+  writes `<icon>icon.png</icon>` into the nuspec (measured 19-10-2026).
+  NuGet takes a PNG or JPEG up to 1 MB and recommends 128×128. The
+  Marketplace reads the icon from the NuGet metadata, and
+  `umbraco-marketplace.json` has no icon field, so there is nothing to host.
+  After the push, check the icon on the nuget.org page and on the Marketplace
+  listing. The icon is the Pulse mark alone, with no platform logo (see "No
+  Umbraco logo on the listing" in LISTING.md).
 - **`umbraco-marketplace.json` was deliberately not shipped for v1.** It is
   optional ("You may choose to add...") and must be hosted at the literal
   `PackageProjectUrl` — which here is the GitHub repo, not a domain Pulse
   serves, so the file would 404 if added today. The base listing (title,
-  description, readme, tags, icon once added) comes from NuGet metadata
+  description, readme, tags, icon) comes from NuGet metadata
   alone and needs nothing hosted. If deeper customisation is wanted later —
   a `Category` of "Analytics & Insights" in particular, which the baseline
   listing will NOT carry without this file — either host

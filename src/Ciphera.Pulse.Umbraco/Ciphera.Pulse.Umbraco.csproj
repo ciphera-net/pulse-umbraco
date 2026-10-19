@@ -12,6 +12,13 @@
     -->
     <PackageTags>umbraco-marketplace;umbraco;analytics;privacy;pulse</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!--
+      The icon nuget.org shows. The Umbraco Marketplace takes its base listing,
+      icon included, from NuGet metadata, and umbraco-marketplace.json has no
+      icon field. NuGet accepts PNG or JPEG up to 1 MB and recommends 128x128.
+      icon.png is the brand library's Umbraco icon, copied byte for byte.
+    -->
+    <PackageIcon>icon.png</PackageIcon>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -45,6 +52,7 @@
 
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
