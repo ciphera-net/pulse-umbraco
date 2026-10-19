@@ -29,7 +29,7 @@ listing's title, description and readme come from.
 | Direct `Umbraco.Cms.*` dependency (for version-range detection) | ✅ `Umbraco.Cms.Core` |
 | Licence | ✅ Apache-2.0 (`PackageLicenseExpression`) — see README.md "Licence" |
 | Package pushed to nuget.org | 🔴 not done (RELEASING.md) |
-| `PackageIcon` | 🔴 not set (RELEASING.md "Open items") |
+| `PackageIcon` | ✅ `src/Ciphera.Pulse.Umbraco/icon.png`, 128×128 PNG, packed at the `.nupkg` root (RELEASING.md "Open items") |
 | `umbraco-marketplace.json` (optional, for Category/screenshots) | 🔴 not shipped for v1, needs a hosted `PackageProjectUrl` first |
 
 ## Listing fields
