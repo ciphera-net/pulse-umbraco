@@ -41,14 +41,14 @@ listing's title, description and readme come from.
 **Short description** (NuGet `Description`, also what a Marketplace card
 shows):
 
-> Privacy-first web analytics for Umbraco. No cookies, no personal data, and the script it adds to your pages is under 3 KB.
+> Privacy-first web analytics for Umbraco. No cookies, no IP addresses stored, and the script it adds to your pages is under 3 KB.
 
 **Long description** (for the Marketplace page / `umbraco-marketplace-readme.md`
 if that file is ever added — until then, the package README is what renders):
 
 Pulse Analytics adds privacy-first web analytics to an Umbraco site with one
 NuGet package and a TagHelper you add to your layout. It sets no cookies,
-stores no personal data, and the script it adds to your pages is under 3 KB.
+never stores IP addresses, and the script it adds to your pages is under 3 KB.
 
 How it works
 
