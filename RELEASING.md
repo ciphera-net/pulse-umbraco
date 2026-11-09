@@ -1,9 +1,12 @@
 # Releasing Ciphera.Pulse.Umbraco
 
-## Status: not yet published, not yet pushed anywhere
+## Status: on GitHub, not yet on nuget.org
 
-This repository was built locally, with no remote, no GitHub repo, and no
-registry publish — by explicit instruction while it was written. Everything
+The repository is public at `github.com/ciphera-net/pulse-umbraco` (since
+14-10-2026; CI since 09-11-2026). Nothing has been published to nuget.org: the
+first push waits on an owner-held API key (`NUGET_API_KEY` in the workspace
+`.env`). It was first built locally, with no remote and no registry publish,
+by explicit instruction while it was written. Everything
 below is the documented flow for the **first** real release, written so it
 can be followed without re-deriving any of it, and every claim about the
 Marketplace's behaviour is sourced from Umbraco's own current documentation
@@ -62,6 +65,13 @@ right tag is the whole mechanism:
    dotnet pack src/Ciphera.Pulse.Umbraco/Ciphera.Pulse.Umbraco.csproj \
      -c Release -o ./artifacts -p:Version=1.0.0
    ```
+   On a machine with no .NET SDK (the workspace Mac has none), run the same
+   command in the SDK image the harness uses, from a clean checkout of the tag:
+   ```bash
+   docker run --rm -v "$PWD":/repo -w /repo mcr.microsoft.com/dotnet/sdk:10.0 \
+     dotnet pack src/Ciphera.Pulse.Umbraco/Ciphera.Pulse.Umbraco.csproj \
+       -c Release -o /repo/artifacts -p:Version=1.0.0
+   ```
 3. **Run the real-install harness FIRST — see "What has not been verified
    against a real install" below.** Every sibling Pulse integration's
    RELEASING.md says some version of "validate before you publish, because a
@@ -72,7 +82,13 @@ right tag is the whole mechanism:
    of a real problem than a package that has at least compiled once.
    ```bash
    ./scripts/verify.sh --mutate
+   UMBRACO_TEMPLATE_RANGE='18.*' ./scripts/verify.sh --mutate
    ```
+   Run it once per supported major. The package declares
+   `Umbraco.Cms.Core >= 17.0.0` with no upper bound, so the Marketplace lists
+   it for 17 and every later major; each run prints the versions it resolved
+   under "resolved versions", and that line is the evidence, not the template
+   range it was asked for.
 4. **Push to nuget.org.** Needs an owner-provisioned NuGet.org API key —
    nuget.org lets a key be scoped to "push new packages and package versions"
    for a specific glob (`Ciphera.Pulse.*` or the exact package id), which is
@@ -85,6 +101,14 @@ right tag is the whole mechanism:
      --api-key "$NUGET_API_KEY" \
      --source https://api.nuget.org/v3/index.json
    ```
+   Without a local SDK, pass the key into the container as an environment
+   variable and expand it inside the container's shell, so it never appears on
+   the host command line:
+   ```bash
+   NUGET_API_KEY=$(grep '^NUGET_API_KEY=' "<workspace>/.env" | cut -d= -f2- | tr -d '"') \
+   docker run --rm -e NUGET_API_KEY -v "$PWD":/repo -w /repo mcr.microsoft.com/dotnet/sdk:10.0 \
+     sh -c 'dotnet nuget push artifacts/Ciphera.Pulse.Umbraco.1.0.0.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json'
+   ```
    nuget.org has **no human review queue** — the package is live and
    installable the moment the push succeeds. It does run an asynchronous
    malware/security scan afterwards that can flag a package post-publish, but
@@ -94,23 +118,23 @@ right tag is the whole mechanism:
    UTC scan or force it with the sync endpoint above, then check
    `marketplace.umbraco.com` for the listing and run the validator
    (`marketplace.umbraco.com/validate`) against it.
-6. **Push the GitHub repo this metadata already assumes exists.**
-   `PackageProjectUrl`/`RepositoryUrl` in `Directory.Build.props` point at
-   `https://github.com/ciphera-net/pulse-umbraco` — that repository does not
-   exist yet anywhere; creating it (and pushing this history to it) is a
-   prerequisite for those links to resolve, and is explicitly out of scope
-   for the task that produced this repo (no remote, no `gh repo create`, no
-   push). Do this before or in the same step as the nuget.org push, not
-   after — a listing linking to a 404 is its own small defect.
+6. ✅ **The GitHub repo the metadata points at exists** (public since
+   14-10-2026), so `PackageProjectUrl` and `RepositoryUrl` in
+   `Directory.Build.props` resolve.
+7. **Watch the listing.** Add a `nuget` listing to `marketplace-version-check`
+   (the Infra watcher that already compares wordpress.org, npm, Packagist,
+   drupal.org, the Joomla manifest and apps.odoo.com against each repo's
+   newest tag), so a release that never reaches nuget.org raises an alert.
+8. **GitHub Release notes for the tag** (`gh release create v1.0.0`), as for
+   every tag on a public package.
 
 ## Open items — things this repository could not settle itself
 
 - **CI since 09-11-2026:** Woodpecker runs the security scan and `dotnet test`
   (in the mirrored .NET 10 SDK image) on every pull request and push to
-  `main`; `scripts/verify.sh`, a real Umbraco install, stays local. Still open,
-  per the lesson above: a version-drift watcher comparing the nuget.org
-  version to the latest git tag, since NOTHING else will notice if a future
-  release fails to publish.
+  `main`; `scripts/verify.sh`, a real Umbraco install, stays local. The
+  version-drift watcher for nuget.org is step 7 above; it can only be added
+  once the package exists there.
 - **The package icon is set. Only the first push shows how nuget.org and the
   Marketplace render it.** `src/Ciphera.Pulse.Umbraco/icon.png` is a 128×128
   PNG (2,982 bytes, the Pulse mark on `#0a0a0a`), copied byte for byte from
@@ -147,7 +171,25 @@ right tag is the whole mechanism:
 - **CI and tracking exist since 09-11-2026** (Woodpecker; the NuGet release is
   tracked with the other store listings).
 
-## ✅ Verified against a real install (14-10-2026)
+## ✅ Verified against a real install (14-10-2026, re-run 09-11-2026)
+
+**Re-run 09-11-2026** on Umbraco 17.8.1 and 18.3.1 (templates of the same
+versions, .NET SDK 10.0.403), plain and `--mutate`: all green, with the
+resolved `Umbraco.Cms.Core` printed by the harness (17.8.1 and 18.3.1). Two
+harness changes came out of it, each proven with a control:
+
+- **It names the versions it ran on** ("resolved versions", from
+  `dotnet list package --include-transitive`), and fails when that line lacks
+  `Umbraco.Cms.Core` or this package. Control: a copy whose filter drops this
+  package failed that one check and no other.
+- **A failed setup step stops the run.** One run hit a DNS failure inside the
+  container (`Name or service not known (api.nuget.org:443)`) at the pack
+  step, carried on without the package, and failed five later checks with
+  messages about the tag. Control: a template range that does not exist
+  (`99.*`) now stops at the template step with
+  `REFUSING: setup failed (install the Umbraco templates, exit 103)`.
+
+The 14-10-2026 account follows.
 
 `scripts/verify.sh` has now run, for real, inside Docker (`mcr.microsoft.com/dotnet/sdk:10.0`,
 Umbraco 17.7.1, .NET 10.0.402) — both the plain run and `--mutate`, both green. This package has

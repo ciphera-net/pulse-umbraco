@@ -83,6 +83,13 @@ trap teardown EXIT
 
 run() { docker exec "$CONTAINER" bash -lc "$1"; }
 
+# A setup step that fails stops the run there. Carrying on makes every later
+# check fail for a reason that has nothing to do with this package: on
+# 09-11-2026 a DNS failure inside the container failed the pack step, and five
+# checks went red with messages about the tag.
+setup() { run "$1" || { echo "REFUSING: setup failed ($2, exit $?)"; exit 1; }; }
+copy_in() { docker cp "$1" "$CONTAINER":"$2" || { echo "REFUSING: could not copy $1 into the container"; exit 1; }; }
+
 # Kills a previous run of the scaffolded site, if one is still up.
 #
 # 🔴 Two real bugs found running this for the first time, both load-bearing:
@@ -115,7 +122,7 @@ docker run -d --name "$CONTAINER" --network "$NETWORK" \
   -v "$REPO_ROOT":/repo:ro \
   "$SDK_IMAGE" sleep infinity >/dev/null
 
-run "mkdir -p /work"
+setup "mkdir -p /work" "create /work"
 
 # ── Build our own package from the mounted (read-only) repo ────────────────
 # /repo is mounted :ro, so the project's own obj/bin cannot be used for
@@ -124,19 +131,19 @@ run "mkdir -p /work"
 # a writable path under /work, or `dotnet pack` fails with "Read-only file
 # system" on the very first run against a never-built repo.
 echo "==> packing Ciphera.Pulse.Umbraco $VERIFY_VERSION from /repo"
-run "dotnet pack /repo/src/Ciphera.Pulse.Umbraco/Ciphera.Pulse.Umbraco.csproj \
+setup "dotnet pack /repo/src/Ciphera.Pulse.Umbraco/Ciphera.Pulse.Umbraco.csproj \
       -c Release -o /work/local-nupkgs -p:Version=$VERIFY_VERSION \
-      -p:BaseIntermediateOutputPath=/work/obj-pack/ -p:BaseOutputPath=/work/bin-pack/"
+      -p:BaseIntermediateOutputPath=/work/obj-pack/ -p:BaseOutputPath=/work/bin-pack/" "pack the package"
 
 # ── Scaffold a throwaway Umbraco site ────────────────────────────────────────
 echo "==> installing the Umbraco $UMBRACO_TEMPLATE_RANGE templates"
-run "dotnet new install Umbraco.Templates::$UMBRACO_TEMPLATE_RANGE"
+setup "dotnet new install Umbraco.Templates::$UMBRACO_TEMPLATE_RANGE" "install the Umbraco templates"
 
 echo "==> scaffolding an unattended Umbraco site (SQLite, no external DB needed)"
-run "cd /work && dotnet new umbraco -n PulseVerifySite \
+setup "cd /work && dotnet new umbraco -n PulseVerifySite \
       --development-database-type SQLite \
-      --friendly-name 'Pulse Verify' --email admin@example.com --password '$ADMIN_PASS'"
-run "mv /work/PulseVerifySite /work/site"
+      --friendly-name 'Pulse Verify' --email admin@example.com --password '$ADMIN_PASS'" "scaffold the site"
+setup "mv /work/PulseVerifySite /work/site" "move the site into place"
 
 cat > /tmp/pulse-verify-nuget.config <<'EOF'
 <?xml version="1.0" encoding="utf-8"?>
@@ -148,7 +155,7 @@ cat > /tmp/pulse-verify-nuget.config <<'EOF'
   </packageSources>
 </configuration>
 EOF
-docker cp /tmp/pulse-verify-nuget.config "$CONTAINER":/work/site/NuGet.config
+copy_in /tmp/pulse-verify-nuget.config /work/site/NuGet.config
 
 # ── A page that WOULD carry the tag, without the integration yet ────────────
 # This is the "smallest honest alternative" to content-authoring a real
@@ -281,14 +288,14 @@ EOF
 # Views/Partials/* and _ViewImports.cshtml — a content-first CMS has no
 # reason to pre-create a plain-MVC controllers folder). `docker cp` refuses
 # to create missing destination directories, so create them first.
-run "mkdir -p /work/site/Controllers /work/site/Views/Shared /work/site/Views/Verify"
-docker cp /tmp/pulse-verify-site/Controllers/. "$CONTAINER":/work/site/Controllers/
-docker cp /tmp/pulse-verify-site/Views/Verify/. "$CONTAINER":/work/site/Views/Verify/
-docker cp /tmp/pulse-verify-site/Views/Shared/_Layout.before.cshtml "$CONTAINER":/work/site/Views/Shared/_Layout.before.cshtml
-docker cp /tmp/pulse-verify-site/Views/Shared/_Layout.after.cshtml "$CONTAINER":/work/site/Views/Shared/_Layout.after.cshtml
+setup "mkdir -p /work/site/Controllers /work/site/Views/Shared /work/site/Views/Verify" "create the fixture folders"
+copy_in /tmp/pulse-verify-site/Controllers/. /work/site/Controllers/
+copy_in /tmp/pulse-verify-site/Views/Verify/. /work/site/Views/Verify/
+copy_in /tmp/pulse-verify-site/Views/Shared/_Layout.before.cshtml /work/site/Views/Shared/_Layout.before.cshtml
+copy_in /tmp/pulse-verify-site/Views/Shared/_Layout.after.cshtml /work/site/Views/Shared/_Layout.after.cshtml
 
 # ── Negative control: the page exists, the integration does not ─────────────
-run "cp /work/site/Views/Shared/_Layout.before.cshtml /work/site/Views/Shared/_Layout.cshtml"
+setup "cp /work/site/Views/Shared/_Layout.before.cshtml /work/site/Views/Shared/_Layout.cshtml" "use the layout without the tag"
 
 start_site() {
   kill_site
@@ -355,7 +362,7 @@ check "no ciphera/pulse bytes before the package is even referenced" \
 
 # ── Add the integration for real ─────────────────────────────────────────────
 echo "==> adding Ciphera.Pulse.Umbraco $VERIFY_VERSION and wiring the TagHelper"
-run "cd /work/site && dotnet add package Ciphera.Pulse.Umbraco --version $VERIFY_VERSION --source /work/local-nupkgs"
+setup "cd /work/site && dotnet add package Ciphera.Pulse.Umbraco --version $VERIFY_VERSION --source /work/local-nupkgs" "add the package to the site"
 # The scaffold's own _ViewImports.cshtml has NO trailing newline on its last
 # line. `echo … >> file` on a file like that appends directly onto that last
 # line, not a new one — this concatenated onto the existing
@@ -367,9 +374,24 @@ run "cd /work/site && dotnet add package Ciphera.Pulse.Umbraco --version $VERIFY
 # rewriting the file with a real newline between the two directives, which
 # fixed it outright. printf with a leading \n guarantees the new directive
 # starts its own line regardless of whether the file already ends in one.
-run "grep -q 'Ciphera.Pulse.Umbraco' /work/site/Views/_ViewImports.cshtml \
-      || printf '\n@addTagHelper *, Ciphera.Pulse.Umbraco\n' >> /work/site/Views/_ViewImports.cshtml"
-run "cp /work/site/Views/Shared/_Layout.after.cshtml /work/site/Views/Shared/_Layout.cshtml"
+setup "grep -q 'Ciphera.Pulse.Umbraco' /work/site/Views/_ViewImports.cshtml \
+      || printf '\n@addTagHelper *, Ciphera.Pulse.Umbraco\n' >> /work/site/Views/_ViewImports.cshtml" "register the TagHelper"
+setup "cp /work/site/Views/Shared/_Layout.after.cshtml /work/site/Views/Shared/_Layout.cshtml" "use the layout with the tag"
+
+# Name the versions this run exercised, from the restored graph rather than the
+# template range asked for: Umbraco.Cms.Core is the dependency the Marketplace
+# reads, and a log that says "17.*" or "18.*" does not prove which one resolved.
+echo "==> resolved versions"
+RESOLVED="$(run "cd /work/site && dotnet list package --include-transitive" \
+  | grep -E '> (Umbraco\.Cms|Umbraco\.Cms\.Core|Ciphera\.Pulse\.Umbraco) ' | sed 's/^ */    /')"
+if printf '%s\n' "$RESOLVED" | grep -q 'Umbraco\.Cms\.Core' \
+   && printf '%s\n' "$RESOLVED" | grep -q 'Ciphera\.Pulse\.Umbraco'; then
+  echo "$RESOLVED"
+else
+  echo "    ❌ could not read the resolved Umbraco.Cms.Core and Ciphera.Pulse.Umbraco versions"
+  [ -n "$RESOLVED" ] && echo "$RESOLVED"
+  FAILURES=$((FAILURES + 1))
+fi
 
 CORE='https://js\.ciphera\.net/script\.js'
 COMPANION_URL='https://js\.ciphera\.net/script\.interactions\.js'
@@ -444,7 +466,7 @@ if [ "$MUTATE" -eq 1 ]; then
   # is never the thing that gets mutated. Copy the WHOLE repo (not just
   # src/), so Directory.Build.props and the README the csproj packs both
   # still resolve by their existing relative paths.
-  run "rm -rf /work/mutated-repo && cp -r /repo /work/mutated-repo"
+  setup "rm -rf /work/mutated-repo && cp -r /repo /work/mutated-repo" "copy the repo for the mutation"
   run "sed -i '/MUTATE:BACKOFFICE_GUARD:BEGIN/,/MUTATE:BACKOFFICE_GUARD:END/d' \
         /work/mutated-repo/src/Ciphera.Pulse.Umbraco/PulseAnalyticsTagHelper.cs"
 
@@ -454,9 +476,9 @@ if [ "$MUTATE" -eq 1 ]; then
     FAILURES=$((FAILURES + 1))
   else
     MUTATED_VERSION="${VERIFY_VERSION}-mutated"
-    run "dotnet pack /work/mutated-repo/src/Ciphera.Pulse.Umbraco/Ciphera.Pulse.Umbraco.csproj \
-          -c Release -o /work/local-nupkgs -p:Version=$MUTATED_VERSION"
-    run "cd /work/site && dotnet add package Ciphera.Pulse.Umbraco --version $MUTATED_VERSION --source /work/local-nupkgs"
+    setup "dotnet pack /work/mutated-repo/src/Ciphera.Pulse.Umbraco/Ciphera.Pulse.Umbraco.csproj \
+          -c Release -o /work/local-nupkgs -p:Version=$MUTATED_VERSION" "pack the mutated package"
+    setup "cd /work/site && dotnet add package Ciphera.Pulse.Umbraco --version $MUTATED_VERSION --source /work/local-nupkgs" "add the mutated package"
 
     if ! start_site "PulseAnalytics__Domain=example.com"; then
       echo "    ❌ mutated build would not even start — cannot prove the mutation test"

@@ -41,7 +41,7 @@ listing's title, description and readme come from.
 **Short description** (NuGet `Description`, also what a Marketplace card
 shows):
 
-> Privacy-first web analytics for Umbraco. No cookies, no IP addresses stored, and the script it adds to your pages is under 3 KB.
+> Pulse Analytics adds privacy-first web analytics to an Umbraco site with one NuGet package and a TagHelper you add to your layout. It sets no cookies, never stores IP addresses, and the script it adds to your pages is under 3 KB.
 
 **Long description** (for the Marketplace page / `umbraco-marketplace-readme.md`
 if that file is ever added — until then, the package README is what renders):
@@ -90,8 +90,7 @@ below)
 
 **Links:** Website `https://pulse.ciphera.net` · Documentation
 `https://docs.ciphera.net/pulse` · Source
-`https://github.com/ciphera-net/pulse-umbraco` (does not exist yet — see
-RELEASING.md)
+`https://github.com/ciphera-net/pulse-umbraco` (public since 14-10-2026)
 
 **Licence:** Apache License 2.0
 
