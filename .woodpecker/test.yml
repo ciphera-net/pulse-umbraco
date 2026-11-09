@@ -1,0 +1,46 @@
+# Runs on pull_request AND on push to main.
+#
+# A workflow that only runs on pull requests checks the proposal and never the
+# branch that ships, so this one runs on both.
+#
+# What this covers: the xUnit project in tests/ (TagBuilder, the options
+# validator and the TagHelper), which restores the library and its Umbraco and
+# test packages from NuGet, builds both projects and runs the tests. Nothing
+# here packs or publishes.
+#
+# What this does NOT cover: a real Umbraco site serving the tag, which is what
+# scripts/verify.sh does inside the same SDK image. Run it before a release.
+when:
+  - event: pull_request
+  - event: push
+    branch: main
+
+labels:
+  runner: k8s
+
+steps:
+  - name: test
+    image: registry.ops.ciphera.net/mirror/mcr.microsoft.com/dotnet/sdk:10.0.403-noble@sha256:32ac63f80a3dfe48cf91ec1de80b0f394e37e353ee367c7fa87991c2111d22f4
+    environment:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+      # No compiler or MSBuild servers left running after the build.
+      DOTNET_CLI_USE_MSBUILD_SERVER: "0"
+      MSBUILDDISABLENODEREUSE: "1"
+    backend_options:
+      kubernetes:
+        resources:
+          requests: { memory: 1Gi, cpu: 500m }
+          limits: { memory: 3Gi }
+    commands:
+      - dotnet --version
+      # The TRX report carries the number of tests that actually ran, which is
+      # asserted rather than trusted: a project that discovers no tests still
+      # exits 0. It is a floor, not an equality: adding tests must never redden
+      # the build.
+      - |
+        dotnet test tests/Ciphera.Pulse.Umbraco.Tests/Ciphera.Pulse.Umbraco.Tests.csproj --nologo -p:UseSharedCompilation=false --results-directory /tmp/dotnet-results --logger "trx;LogFileName=tests.trx" > /tmp/dotnet-test.log 2>&1 || { cat /tmp/dotnet-test.log; exit 1; }
+        cat /tmp/dotnet-test.log
+        COUNT=$(grep -o 'executed="[0-9]*"' /tmp/dotnet-results/tests.trx | head -1 | grep -o '[0-9]*')
+        echo "xunit executed $COUNT test(s)"
+        [ "$COUNT" -ge 40 ] || { echo "REFUSING: expected at least 40 tests, executed $COUNT. The suite shrank or stopped being collected."; exit 1; }

@@ -105,12 +105,10 @@ right tag is the whole mechanism:
 
 ## Open items — things this repository could not settle itself
 
-- **No CI exists for this repo yet** — it has never been pushed anywhere for
-  a CI system to register. Before relying on this package long-term, add a
-  pipeline step that runs `dotnet test` and `scripts/verify.sh` inside a
-  `mcr.microsoft.com/dotnet/sdk` image, the same way the other integrations'
-  `scripts/check.sh`/`scripts/verify.sh` are wired into their own CI — and,
-  per the lesson above, add a version-drift watcher comparing the nuget.org
+- **CI since 09-11-2026:** Woodpecker runs the security scan and `dotnet test`
+  (in the mirrored .NET 10 SDK image) on every pull request and push to
+  `main`; `scripts/verify.sh`, a real Umbraco install, stays local. Still open,
+  per the lesson above: a version-drift watcher comparing the nuget.org
   version to the latest git tag, since NOTHING else will notice if a future
   release fails to publish.
 - **The package icon is set. Only the first push shows how nuget.org and the
@@ -146,9 +144,8 @@ right tag is the whole mechanism:
   estate's first NuGet package. Publishing to GitHub Packages' NuGet feed as
   well as nuget.org is possible but not assumed here — an owner decision,
   not inferred from the npm convention.
-- **No CI registration, no work-tracking entry.** This task's scope note
-  explicitly forbade posting anywhere, so none was filed. The first session
-  that pushes this repo and sets up CI should do both.
+- **CI and tracking exist since 09-11-2026** (Woodpecker; the NuGet release is
+  tracked with the other store listings).
 
 ## ✅ Verified against a real install (14-10-2026)
 
