@@ -225,7 +225,8 @@ Standard-Term Support version on the same .NET 10 base. The package targets
 `Umbraco.Cms.Core >= 17.0.0`, a minimum and not a pin (see the csproj comment).
 That covers both 17 and 18 in one build, and the Umbraco Marketplace itself
 derives the supported-version range from exactly that dependency (see
-RELEASING.md).
+RELEASING.md). The real-install harness (`scripts/verify.sh`) passed on
+Umbraco 17.8.1 and on Umbraco 18.3.1 on 09-11-2026.
 
 ## Licence
 

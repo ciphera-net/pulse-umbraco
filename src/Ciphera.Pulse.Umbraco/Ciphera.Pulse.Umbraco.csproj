@@ -4,7 +4,7 @@
     <IsPackable>true</IsPackable>
     <PackageId>Ciphera.Pulse.Umbraco</PackageId>
     <Title>Pulse Analytics for Umbraco</Title>
-    <Description>Privacy-first web analytics for Umbraco. A TagHelper you add to your layout, no cookies, no IP addresses stored, and the script it adds to your pages is under 3 KB.</Description>
+    <Description>Pulse Analytics adds privacy-first web analytics to an Umbraco site with one NuGet package and a TagHelper you add to your layout. It sets no cookies, never stores IP addresses, and the script it adds to your pages is under 3 KB.</Description>
     <!--
       Only the installable component is tagged "umbraco-marketplace" (there is
       no separate Core/Web split here, so this one package carries it) — see
