@@ -137,9 +137,10 @@ right tag is the whole mechanism:
   once the package exists there.
 - **The package icon is set. Only the first push shows how nuget.org and the
   Marketplace render it.** `src/Ciphera.Pulse.Umbraco/icon.png` is a 128×128
-  PNG (2,982 bytes, the Pulse mark on `#0a0a0a`), copied byte for byte from
-  the brand library's v6 Umbraco icon, SHA-256
-  `3d31c1262f8b17bbed0d3d481c08e4f6907dc8fed92ffdd743a6b17b9ae4c895`.
+  PNG (1,238 bytes, the Pulse mark in white layers on the brand orange
+  `#FD5E0F`), copied byte for byte from the brand library's v12 Umbraco icon,
+  SHA-256 `0df8ac7d61689c71bdb0ab7716553bf0970b7578a9980afab8a9522a3c01ceb9`.
+  Version 1.0.0 shipped the earlier dark icon; 1.0.1 carries this one.
   The csproj sets `<PackageIcon>icon.png</PackageIcon>` and packs the file
   with `<None Include="icon.png" Pack="true" PackagePath="\" />`.
   `dotnet pack` puts it at the root of the `.nupkg` with that same hash and
