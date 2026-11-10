@@ -5,11 +5,11 @@ IS the listing, for the baseline) and into `umbraco-marketplace.json` if that
 file is ever hosted (see RELEASING.md "Open items"). Keep this in step with
 the package; it has version control, the NuGet gallery page does not.
 
-**Status:** 🔴 **NOT PUBLISHED.** No nuget.org account has pushed this
-package, so there is no listing id, no Marketplace URL and nothing to check
-externally yet — unlike the Joomla JED (id `17699`, state `Pending`) or TYPO3
-(built, blocked only on an owner-held token), this package has not reached
-the point where a store even knows it exists.
+**Status:** 🟢 **Published on 10-11-2026.** `Ciphera.Pulse.Umbraco` 1.0.0 and 1.0.1 are on
+nuget.org (`https://www.nuget.org/packages/Ciphera.Pulse.Umbraco`), and the Umbraco Marketplace lists
+the package as "Pulse Analytics for Umbraco"
+(`https://marketplace.umbraco.com/package/ciphera.pulse.umbraco`) for Umbraco 17 and 18, with the icon
+of the newest package.
 
 ## How this listing comes to exist at all
 
