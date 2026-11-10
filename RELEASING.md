@@ -1,13 +1,13 @@
 # Releasing Ciphera.Pulse.Umbraco
 
-## Status: on GitHub, not yet on nuget.org
+## Status: on nuget.org and the Umbraco Marketplace
 
+1.0.0 was pushed to nuget.org on 10-11-2026 at 20:06:50 UTC and 1.0.1 (the
+orange icon) at 21:23:08 UTC, both with `NUGET_API_KEY` from the workspace
+`.env`. A forced sync listed the package on the Marketplace at 21:30:55 UTC.
 The repository is public at `github.com/ciphera-net/pulse-umbraco` (since
-14-10-2026; CI since 09-11-2026). Nothing has been published to nuget.org: the
-first push waits on an owner-held API key (`NUGET_API_KEY` in the workspace
-`.env`). It was first built locally, with no remote and no registry publish,
-by explicit instruction while it was written. Everything
-below is the documented flow for the **first** real release, written so it
+14-10-2026; CI since 09-11-2026). Everything below is the release flow,
+written for the first release and checked against the first two, so it
 can be followed without re-deriving any of it, and every claim about the
 Marketplace's behaviour is sourced from Umbraco's own current documentation
 (`docs.umbraco.com/umbraco-dxp/marketplace/listing-your-package`, read
@@ -109,22 +109,30 @@ right tag is the whole mechanism:
    docker run --rm -e NUGET_API_KEY -v "$PWD":/repo -w /repo mcr.microsoft.com/dotnet/sdk:10.0 \
      sh -c 'dotnet nuget push artifacts/Ciphera.Pulse.Umbraco.1.0.0.nupkg --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json'
    ```
-   nuget.org has **no human review queue** — the package is live and
-   installable the moment the push succeeds. It does run an asynchronous
-   malware/security scan afterwards that can flag a package post-publish, but
-   that does not block the initial listing, the same "publish now, review
-   later" shape as TYPO3's TER.
+   nuget.org has no human review queue, but it validates every push before
+   it serves it: until then the flat container
+   (`api.nuget.org/v3-flatcontainer/ciphera.pulse.umbraco/index.json`) and
+   the gallery page answer 404. Measured on 10-11-2026: 1.0.0 took about 63
+   minutes (pushed 20:06:50, served 21:09:57 UTC, on a day nuget.org's status
+   page showed publishing degraded from 15:38 to 16:28), 1.0.1 about 7
+   minutes (21:23:08 to 21:30:16). A failed validation is reported by email
+   to the account.
 5. **Confirm the Marketplace picked it up.** Either wait for the next 04:00
    UTC scan or force it with the sync endpoint above, then check
    `marketplace.umbraco.com` for the listing and run the validator
-   (`marketplace.umbraco.com/validate`) against it.
+   (`marketplace.umbraco.com/validate`) against it. On 10-11-2026 the forced
+   sync answered 202 at 21:30:52 UTC, and three seconds later the Marketplace
+   API (`api.marketplace.umbraco.com/api/v1.0/packages/Ciphera.Pulse.Umbraco`)
+   listed version 1.0.1 for Umbraco 17 and 18, with the icon read from the
+   1.0.1 package.
 6. ✅ **The GitHub repo the metadata points at exists** (public since
    14-10-2026), so `PackageProjectUrl` and `RepositoryUrl` in
    `Directory.Build.props` resolve.
-7. **Watch the listing.** Add a `nuget` listing to `marketplace-version-check`
-   (the Infra watcher that already compares wordpress.org, npm, Packagist,
-   drupal.org, the Joomla manifest and apps.odoo.com against each repo's
-   newest tag), so a release that never reaches nuget.org raises an alert.
+7. ✅ **Watch the listing.** `marketplace-version-check` reads nuget.org
+   since 10-11-2026 (listing `nuget-umbraco`, infra#886), alongside
+   wordpress.org, npm, Packagist, drupal.org, the Joomla manifest and
+   apps.odoo.com, so a release that never reaches nuget.org raises an alert
+   after 2 hours.
 8. **GitHub Release notes for the tag** (`gh release create v1.0.0`), as for
    every tag on a public package.
 
@@ -133,10 +141,9 @@ right tag is the whole mechanism:
 - **CI since 09-11-2026:** Woodpecker runs the security scan and `dotnet test`
   (in the mirrored .NET 10 SDK image) on every pull request and push to
   `main`; `scripts/verify.sh`, a real Umbraco install, stays local. The
-  version-drift watcher for nuget.org is step 7 above; it can only be added
-  once the package exists there.
-- **The package icon is set. Only the first push shows how nuget.org and the
-  Marketplace render it.** `src/Ciphera.Pulse.Umbraco/icon.png` is a 128×128
+  version-drift watcher for nuget.org is step 7 above (live since
+  10-11-2026).
+- **The package icon.** `src/Ciphera.Pulse.Umbraco/icon.png` is a 128×128
   PNG (1,238 bytes, the Pulse mark in white layers on the brand orange
   `#FD5E0F`), copied byte for byte from the brand library's v12 Umbraco icon,
   SHA-256 `0df8ac7d61689c71bdb0ab7716553bf0970b7578a9980afab8a9522a3c01ceb9`.
@@ -148,8 +155,9 @@ right tag is the whole mechanism:
   NuGet takes a PNG or JPEG up to 1 MB and recommends 128×128. The
   Marketplace reads the icon from the NuGet metadata, and
   `umbraco-marketplace.json` has no icon field, so there is nothing to host.
-  After the push, check the icon on the nuget.org page and on the Marketplace
-  listing. The icon is the Pulse mark alone, with no platform logo (see "No
+  The Marketplace takes the icon from the newest package (its record names
+  `.../1.0.1/icon`, dominant colour `#FD7430`, measured 10-11-2026), so a new
+  icon reaches it with the next release. The icon is the Pulse mark alone, with no platform logo (see "No
   Umbraco logo on the listing" in LISTING.md).
 - **`umbraco-marketplace.json` was deliberately not shipped for v1.** It is
   optional ("You may choose to add...") and must be hosted at the literal
