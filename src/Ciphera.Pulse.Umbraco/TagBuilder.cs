@@ -21,8 +21,7 @@ namespace Ciphera.Pulse.Umbraco;
 /// ships, byte for byte, so the one test suite is the proof for both logic
 /// and bytes.
 ///
-/// Second, the domain grammar, the URLs and the rule that the companion
-/// script is a second request are copied from the other Pulse integrations
+/// Second, the domain grammar and the URLs are copied from the other Pulse integrations
 /// (Drupal, Joomla, TYPO3, Astro) rather than re-derived — two Pulse install
 /// surfaces disagreeing about what the tag looks like is a drift bug waiting
 /// to happen.
@@ -31,9 +30,6 @@ public static class TagBuilder
 {
     /// <summary>The Pulse tracker.</summary>
     public const string ScriptUrl = "https://js.ciphera.net/script.js";
-
-    /// <summary>The companion script: clicks, copies and form submits.</summary>
-    public const string CompanionUrl = "https://js.ciphera.net/script.interactions.js";
 
     /// <summary>
     /// A registrable hostname. Labels of letters, digits and hyphens, at
@@ -76,17 +72,17 @@ public static class TagBuilder
     /// domain is dropped rather than injected, and the tag falls back to
     /// auto-detection — the same working install, one attribute short.
     /// </param>
-    /// <param name="companion">Whether to also load the companion script.</param>
     /// <param name="apiOrigin">A custom API origin, or empty for the default.</param>
     /// <returns>
-    /// One or two <c>&lt;script&gt;</c> elements, newline-separated, already
-    /// HTML-escaped and ready to write to the response. Never a self-closing
+    /// One <c>&lt;script&gt;</c> element, already HTML-escaped and ready to
+    /// write to the response. The tracker loads its interactions script by
+    /// itself when the site's settings in Pulse ask for it. Never a self-closing
     /// <c>&lt;script /&gt;</c> — a self-closed script tag is invalid HTML and
     /// browsers treat it as an opening tag that swallows the rest of the
     /// head, the same lesson Drupal's TagBuilder carries as
     /// <c>'#value' =&gt; ''</c>.
     /// </returns>
-    public static string BuildScriptsHtml(string? domain, bool companion, string? apiOrigin)
+    public static string BuildScriptsHtml(string? domain, string? apiOrigin)
     {
         var sb = new StringBuilder();
 
@@ -106,14 +102,14 @@ public static class TagBuilder
 
         sb.Append(" src=\"").Append(ScriptUrl).Append("\"></script>");
 
-        if (companion)
-        {
-            // No data-domain on the companion: the tracker resolves the
-            // domain once, from the core script, and a second copy is a
-            // second thing to keep in step.
-            sb.Append('\n').Append("<script defer src=\"").Append(CompanionUrl).Append("\"></script>");
-        }
-
         return sb.ToString();
     }
+
+    /// <summary>
+    /// The pre-1.1.0 signature. <paramref name="companion"/> is ignored: the
+    /// result is the same single tag as the two-argument overload.
+    /// </summary>
+    [Obsolete("The companion argument has been ignored since 1.1.0: use BuildScriptsHtml(domain, apiOrigin).")]
+    public static string BuildScriptsHtml(string? domain, bool companion, string? apiOrigin)
+        => BuildScriptsHtml(domain, apiOrigin);
 }

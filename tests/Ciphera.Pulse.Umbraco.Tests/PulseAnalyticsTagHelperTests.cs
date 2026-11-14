@@ -38,6 +38,22 @@ public class PulseAnalyticsTagHelperTests
     }
 
     [Fact]
+    public void An_obsolete_Companion_value_still_builds_and_emits_one_tag()
+    {
+#pragma warning disable CS0618 // Setting the obsolete option is the point of this test.
+        var options = new PulseAnalyticsOptions { Domain = "example.com", Companion = true };
+#pragma warning restore CS0618
+        var sut = CreateSut(options, inPreview: false);
+        var output = CreateOutput();
+
+        sut.Process(CreateContext(), output);
+
+        Assert.Equal(
+            "<script defer data-domain=\"example.com\" src=\"https://js.ciphera.net/script.js\"></script>",
+            output.Content.GetContent());
+    }
+
+    [Fact]
     public void The_pulse_analytics_element_itself_never_reaches_the_response()
     {
         var sut = CreateSut(new PulseAnalyticsOptions { Domain = "example.com" }, inPreview: false);

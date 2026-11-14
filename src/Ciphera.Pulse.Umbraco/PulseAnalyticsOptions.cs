@@ -9,7 +9,6 @@ namespace Ciphera.Pulse.Umbraco;
 /// {
 ///   "PulseAnalytics": {
 ///     "Domain": "example.com",
-///     "Companion": false,
 ///     "TrackPreview": false,
 ///     "ApiOrigin": ""
 ///   }
@@ -40,11 +39,12 @@ public sealed class PulseAnalyticsOptions
     public string Domain { get; set; } = string.Empty;
 
     /// <summary>
-    /// Also record clicks, copies and form submits. Off by default: this
-    /// loads a second, separate script, and the core script's size is a
-    /// published claim — nothing is folded into it to make this feature
-    /// look free.
+    /// Ignored since 1.1.0. The tracker loads the interactions script by
+    /// itself when "Clicks, copies and forms" is on in the site's settings in
+    /// Pulse (Settings, General), so this package never adds a second tag.
+    /// The property stays so an existing <c>appsettings.json</c> still binds.
     /// </summary>
+    [Obsolete("The Companion option has been ignored since 1.1.0: switch it in your site's settings in Pulse.")]
     public bool Companion { get; set; }
 
     /// <summary>

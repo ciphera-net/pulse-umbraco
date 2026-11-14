@@ -1,5 +1,6 @@
 using System.Linq;
 using Ciphera.Pulse.Umbraco;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -23,6 +24,53 @@ public class PulseAnalyticsOptionsValidatorTests
         var result = _validator.Validate(null, new PulseAnalyticsOptions { Domain = "" });
 
         Assert.True(result.Succeeded);
+    }
+
+    [Fact]
+    public void An_obsolete_Companion_value_is_valid_and_warns_once()
+    {
+        var logger = new RecordingLogger();
+        var validator = new PulseAnalyticsOptionsValidator(logger);
+#pragma warning disable CS0618 // Setting the obsolete option is the point of this test.
+        var options = new PulseAnalyticsOptions { Domain = "example.com", Companion = true };
+#pragma warning restore CS0618
+
+        Assert.True(validator.Validate(null, options).Succeeded);
+        Assert.True(validator.Validate(null, options).Succeeded);
+
+        var warning = Assert.Single(logger.Warnings);
+        Assert.Equal(
+            "The Companion option has been ignored since 1.1.0: switch it in your site's settings in Pulse.",
+            warning);
+    }
+
+    [Fact]
+    public void No_warning_when_Companion_is_not_set()
+    {
+        var logger = new RecordingLogger();
+        var validator = new PulseAnalyticsOptionsValidator(logger);
+
+        Assert.True(validator.Validate(null, new PulseAnalyticsOptions { Domain = "example.com" }).Succeeded);
+        Assert.Empty(logger.Warnings);
+    }
+
+    private sealed class RecordingLogger : ILogger<PulseAnalyticsOptionsValidator>
+    {
+        public List<string> Warnings { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Warning)
+            {
+                Warnings.Add(formatter(state, exception));
+            }
+        }
     }
 
     [Fact]

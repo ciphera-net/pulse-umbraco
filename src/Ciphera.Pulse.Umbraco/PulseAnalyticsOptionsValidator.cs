@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Ciphera.Pulse.Umbraco;
@@ -26,9 +27,30 @@ public sealed class PulseAnalyticsOptionsValidator : IValidateOptions<PulseAnaly
 {
     private static readonly Regex HttpOrHttpsScheme = new(@"^https?://", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    private readonly ILogger<PulseAnalyticsOptionsValidator>? _logger;
+    private bool _warnedAboutCompanion;
+
+    /// <param name="logger">
+    /// Optional so the validator can be built without a host in a test. The
+    /// container supplies it at run time.
+    /// </param>
+    public PulseAnalyticsOptionsValidator(ILogger<PulseAnalyticsOptionsValidator>? logger = null)
+    {
+        _logger = logger;
+    }
+
     public ValidateOptionsResult Validate(string? name, PulseAnalyticsOptions options)
     {
         var failures = new List<string>();
+
+#pragma warning disable CS0618 // Reading the obsolete option is how the warning is raised.
+        if (options.Companion && !_warnedAboutCompanion)
+#pragma warning restore CS0618
+        {
+            _warnedAboutCompanion = true;
+            _logger?.LogWarning(
+                "The Companion option has been ignored since 1.1.0: switch it in your site's settings in Pulse.");
+        }
 
         if (!string.IsNullOrWhiteSpace(options.Domain))
         {

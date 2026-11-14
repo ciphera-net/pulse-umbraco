@@ -41,14 +41,14 @@ listing's title, description and readme come from.
 **Short description** (NuGet `Description`, also what a Marketplace card
 shows):
 
-> Pulse Analytics adds privacy-first web analytics to an Umbraco site with one NuGet package and a TagHelper you add to your layout. It sets no cookies, never stores IP addresses, and the script it adds to your pages is under 3 KB.
+> Pulse Analytics adds privacy-first web analytics to an Umbraco site with one NuGet package and a TagHelper you add to your layout. It sets no cookies and never stores IP addresses. The script is about 3 KB.
 
 **Long description** (for the Marketplace page / `umbraco-marketplace-readme.md`
 if that file is ever added — until then, the package README is what renders):
 
 Pulse Analytics adds privacy-first web analytics to an Umbraco site with one
-NuGet package and a TagHelper you add to your layout. It sets no cookies,
-never stores IP addresses, and the script it adds to your pages is under 3 KB.
+NuGet package and a TagHelper you add to your layout. It sets no cookies
+and never stores IP addresses. The script is about 3 KB.
 
 How it works
 
@@ -71,9 +71,11 @@ is a content-preview session unless you turn that on.
 
 Options
 
-A `Companion` setting to also record clicks, copies and form submits, loaded
-as a second request so you only pay for it if you want it; and a custom API
-origin, if you route events through your own proxy.
+Scroll depth, outbound links, file downloads, and clicks, copies and form
+submits are each switched on or off in your site's settings in Pulse
+(Settings > General). The tag stays the same, so there is nothing to change
+here. A custom API origin is available if you route events through your own
+proxy.
 
 You need
 
@@ -100,7 +102,7 @@ below)
   none of those are claims this package or Pulse Analytics makes anywhere
   else, and this listing does not start.
 - **Never** a precise script-size figure like "2.7 KB" — the published claim
-  everywhere else is "under 3 KB gzipped", and that is the only form used
+  everywhere else is "about 3 KB gzipped", and that is the only form used
   here.
 - **Product name is always "Pulse Analytics"**, never "Pulse" alone or "Pulse
   by Ciphera" (an earlier, superseded naming decision — see the estate's own

@@ -394,7 +394,6 @@ else
 fi
 
 CORE='https://js\.ciphera\.net/script\.js'
-COMPANION_URL='https://js\.ciphera\.net/script\.interactions\.js'
 
 echo "==> checking the served HTML"
 
@@ -408,10 +407,15 @@ check "no domain configured means auto-detect, not a broken attribute" \
   "<script defer src=\"$CORE\"></script>" \
   "data-domain"
 
-check "domain + api + companion, companion carries no domain" \
-  "PulseAnalytics__Domain=chosen.dev PulseAnalytics__Companion=true PulseAnalytics__ApiOrigin=https://proxy.example.com/" \
-  "data-domain=\"chosen\\.dev\" data-api=\"https://proxy\\.example\\.com\" src=\"$CORE\"></script>.*$COMPANION_URL" \
-  ""
+check "domain + api, one tag, no companion" \
+  "PulseAnalytics__Domain=chosen.dev PulseAnalytics__ApiOrigin=https://proxy.example.com/" \
+  "data-domain=\"chosen\\.dev\" data-api=\"https://proxy\\.example\\.com\" src=\"$CORE\"></script>" \
+  "script\\.interactions|data-no-|data-ignore-"
+
+check "an obsolete Companion=true still gives one tag and no interactions script" \
+  "PulseAnalytics__Domain=example.com PulseAnalytics__Companion=true" \
+  "<script defer data-domain=\"example\\.com\" src=\"$CORE\"></script>" \
+  "script\\.interactions|data-no-|data-ignore-"
 
 # NOT a check() here, by design, confirmed against a real run — see the
 # house rule "prove a failure is yours before changing your code":

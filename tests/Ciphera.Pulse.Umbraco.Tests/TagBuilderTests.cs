@@ -13,12 +13,11 @@ namespace Ciphera.Pulse.Umbraco.Tests;
 public class TagBuilderTests
 {
     private const string Core = "https://js.ciphera.net/script.js";
-    private const string Companion = "https://js.ciphera.net/script.interactions.js";
 
     [Fact]
     public void Domain_only_produces_the_canonical_tag()
     {
-        var html = TagBuilder.BuildScriptsHtml("example.com", companion: false, apiOrigin: "");
+        var html = TagBuilder.BuildScriptsHtml("example.com", apiOrigin: "");
 
         Assert.Equal(
             $"<script defer data-domain=\"example.com\" src=\"{Core}\"></script>",
@@ -28,7 +27,7 @@ public class TagBuilderTests
     [Fact]
     public void Empty_domain_omits_data_domain_rather_than_emitting_it_blank()
     {
-        var html = TagBuilder.BuildScriptsHtml("", companion: false, apiOrigin: "");
+        var html = TagBuilder.BuildScriptsHtml("", apiOrigin: "");
 
         Assert.Equal($"<script defer src=\"{Core}\"></script>", html);
         Assert.DoesNotContain("data-domain", html);
@@ -37,7 +36,7 @@ public class TagBuilderTests
     [Fact]
     public void Null_domain_behaves_like_empty_domain()
     {
-        var html = TagBuilder.BuildScriptsHtml(null, companion: false, apiOrigin: null);
+        var html = TagBuilder.BuildScriptsHtml(null, apiOrigin: null);
 
         Assert.Equal($"<script defer src=\"{Core}\"></script>", html);
     }
@@ -48,7 +47,7 @@ public class TagBuilderTests
         // The exact shape of a saved-XSS attempt: if this ever leaked into
         // the attribute unescaped, the quote would close "data-domain" early
         // and "onload" would become a live attribute on the <script> tag.
-        var html = TagBuilder.BuildScriptsHtml("bad\" onload=\"alert(1)", companion: false, apiOrigin: "");
+        var html = TagBuilder.BuildScriptsHtml("bad\" onload=\"alert(1)", apiOrigin: "");
 
         Assert.Equal($"<script defer src=\"{Core}\"></script>", html);
         Assert.DoesNotContain("onload", html);
@@ -58,7 +57,7 @@ public class TagBuilderTests
     [Fact]
     public void Domain_with_scheme_path_and_query_is_normalised()
     {
-        var html = TagBuilder.BuildScriptsHtml("HTTPS://Example.COM/path?query=1", companion: false, apiOrigin: "");
+        var html = TagBuilder.BuildScriptsHtml("HTTPS://Example.COM/path?query=1", apiOrigin: "");
 
         Assert.Equal(
             $"<script defer data-domain=\"example.com\" src=\"{Core}\"></script>",
@@ -66,32 +65,34 @@ public class TagBuilderTests
     }
 
     [Fact]
-    public void Companion_adds_a_second_request_with_no_domain_of_its_own()
+    public void Domain_and_api_together()
     {
-        var html = TagBuilder.BuildScriptsHtml("example.com", companion: true, apiOrigin: "");
+        var html = TagBuilder.BuildScriptsHtml("chosen.dev", apiOrigin: "https://proxy.example.com/");
 
         Assert.Equal(
-            $"<script defer data-domain=\"example.com\" src=\"{Core}\"></script>\n" +
-            $"<script defer src=\"{Companion}\"></script>",
+            "<script defer data-domain=\"chosen.dev\" data-api=\"https://proxy.example.com\" " +
+            $"src=\"{Core}\"></script>",
             html);
     }
 
     [Fact]
-    public void Domain_api_and_companion_together()
+    public void The_obsolete_three_argument_overload_ignores_companion_and_emits_one_tag()
     {
-        var html = TagBuilder.BuildScriptsHtml("chosen.dev", companion: true, apiOrigin: "https://proxy.example.com/");
+#pragma warning disable CS0618 // Calling the obsolete overload is the point of this test.
+        var html = TagBuilder.BuildScriptsHtml("example.com", companion: true, apiOrigin: "https://proxy.example.com/");
+#pragma warning restore CS0618
 
         Assert.Equal(
-            "<script defer data-domain=\"chosen.dev\" data-api=\"https://proxy.example.com\" " +
-            $"src=\"{Core}\"></script>\n" +
-            $"<script defer src=\"{Companion}\"></script>",
+            "<script defer data-domain=\"example.com\" data-api=\"https://proxy.example.com\" " +
+            $"src=\"{Core}\"></script>",
             html);
+        Assert.DoesNotContain("script.interactions.js", html);
     }
 
     [Fact]
     public void Api_origin_trailing_slash_is_stripped()
     {
-        var html = TagBuilder.BuildScriptsHtml("", companion: false, apiOrigin: "https://proxy.example.com/");
+        var html = TagBuilder.BuildScriptsHtml("", apiOrigin: "https://proxy.example.com/");
 
         Assert.Contains("data-api=\"https://proxy.example.com\"", html);
         Assert.DoesNotContain("proxy.example.com/\"", html);
@@ -103,10 +104,10 @@ public class TagBuilderTests
         // A self-closed <script> is invalid HTML and every browser treats it
         // as an opening tag that swallows the rest of <head> — the same
         // lesson the Drupal TagBuilder documents as '#value' => ''.
-        var html = TagBuilder.BuildScriptsHtml("example.com", companion: true, apiOrigin: "");
+        var html = TagBuilder.BuildScriptsHtml("example.com", apiOrigin: "");
 
         Assert.DoesNotContain("/>", html);
-        Assert.Equal(2, CountOccurrences(html, "></script>"));
+        Assert.Equal(1, CountOccurrences(html, "></script>"));
     }
 
     [Theory]
