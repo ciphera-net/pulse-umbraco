@@ -2,7 +2,7 @@
 
 Pulse Analytics adds privacy-first analytics to an Umbraco site in one NuGet
 package. It sets no cookies and never stores IP addresses. The script it adds to
-your pages is under 3 KB.
+your pages is about 3 KB.
 
 [Pulse Analytics](https://pulse.ciphera.net) is built by
 [Ciphera](https://ciphera.net), a company in Belgium, and hosted in
@@ -55,7 +55,6 @@ settings screen" below.
 {
   "PulseAnalytics": {
     "Domain": "",
-    "Companion": false,
     "TrackPreview": false,
     "ApiOrigin": ""
   }
@@ -65,9 +64,17 @@ settings screen" below.
 | Setting | Default | What it does |
 |---|---|---|
 | `Domain` | empty | The domain this site is registered under in Pulse. If it is empty, the tracker falls back to the browser's own hostname, which is right for a site served on one domain. |
-| `Companion` | `false` | Records clicks, copies and form submits. It loads a second, separate script, described below. |
 | `TrackPreview` | `false` | Also fires the tracker while a content editor previews unpublished content in the backoffice. It is off by default because a preview session is not the site's audience. |
 | `ApiOrigin` | empty | Sends events through your own proxy origin. It takes a bare origin, not a full URL. |
+
+Scroll depth, outbound links, file downloads, and clicks, copies and form
+submits are each switched on or off in your site's settings in Pulse
+(Settings → General). The tag stays the same, so there is nothing to change
+here.
+
+`Companion` still binds but has been ignored since 1.1.0. It is marked obsolete, and
+the site logs one warning at startup when it is `true`. You can remove it from
+`appsettings.json`.
 
 **A mistyped `Domain` or `ApiOrigin` fails the site's startup** with a message
 naming the offending value. The bad value is not accepted, so a broken tag
@@ -89,9 +96,10 @@ only `script-src https://js.ciphera.net` and
 `connect-src https://pulse-api.ciphera.net`. A nonce or `unsafe-inline` is not
 required.
 
-**The interaction capture is a second request on purpose.** `Companion: true`
-loads `script.interactions.js` as a separate file. The core script's size is a
-published claim, and nothing is folded into it to make a feature look free.
+**Interaction capture needs nothing from this package.** The core script loads
+`script.interactions.js` by itself, from the same host, when "Clicks, copies and
+forms" is on in your site's settings in Pulse. The core script is about 3 KB and
+the interactions script about 1 KB.
 
 **When it renders nothing.** `<pulse-analytics />` suppresses its own output
 in two cases: under Umbraco's own backoffice path (see "How the backoffice

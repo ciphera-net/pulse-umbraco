@@ -84,7 +84,7 @@ public sealed class PulseAnalyticsTagHelper : TagHelper
             return;
         }
 
-        var html = TagBuilder.BuildScriptsHtml(options.Domain, options.Companion, options.ApiOrigin);
+        var html = TagBuilder.BuildScriptsHtml(options.Domain, options.ApiOrigin);
         output.Content.SetHtmlContent(new HtmlString(html));
     }
 
